@@ -70,7 +70,7 @@ class ImageCoordinateTest(absltest.TestCase):
     self.assertIsNone(coord.page)
 
 
-class ExtractionWithNewFieldsTest(parameterized.TestCase):
+class ExtractionWithNewFieldsTest(absltest.TestCase):
   """Tests for Extraction with byte_interval and image_coordinate fields."""
 
   def test_extraction_with_byte_interval(self):
@@ -185,6 +185,141 @@ class AnnotatedDocumentWithNewFieldsTest(absltest.TestCase):
     self.assertEqual(result_dict["extractions"][0]["image_coordinate"]["x"], 100.0)
     self.assertEqual(
         result_dict["extractions"][0]["image_coordinate"]["page"], 2
+    )
+
+  def test_round_trip_with_byte_interval(self):
+    """Test round-trip serialization/deserialization with byte_interval."""
+    byte_interval = data.ByteInterval(start_pos=10, end_pos=25)
+    original_extraction = data.Extraction(
+        extraction_class="text_field",
+        extraction_text="Sample Data",
+        byte_interval=byte_interval,
+        extraction_index=1,
+        group_index=0,
+    )
+    original_doc = data.AnnotatedDocument(
+        document_id="round_trip_1",
+        text="Some sample data here",
+        extractions=[original_extraction],
+    )
+
+    # Serialize to dict
+    doc_dict = data_lib.annotated_document_to_dict(original_doc)
+
+    # Deserialize back to AnnotatedDocument
+    restored_doc = data_lib.dict_to_annotated_document(doc_dict)
+
+    # Verify the round trip preserved all data
+    self.assertEqual(restored_doc.document_id, original_doc.document_id)
+    self.assertEqual(restored_doc.text, original_doc.text)
+    self.assertEqual(len(restored_doc.extractions), 1)
+
+    restored_extraction = restored_doc.extractions[0]
+    self.assertEqual(
+        restored_extraction.extraction_class,
+        original_extraction.extraction_class,
+    )
+    self.assertEqual(
+        restored_extraction.extraction_text,
+        original_extraction.extraction_text,
+    )
+    self.assertIsNotNone(restored_extraction.byte_interval)
+    self.assertEqual(
+        restored_extraction.byte_interval.start_pos,
+        original_extraction.byte_interval.start_pos,
+    )
+    self.assertEqual(
+        restored_extraction.byte_interval.end_pos,
+        original_extraction.byte_interval.end_pos,
+    )
+
+  def test_round_trip_with_image_coordinate(self):
+    """Test round-trip serialization/deserialization with image_coordinate."""
+    image_coord = data.ImageCoordinate(
+        x=50.5, y=100.3, width=200.0, height=150.5, page=3
+    )
+    original_extraction = data.Extraction(
+        extraction_class="image_region",
+        extraction_text="Region Text",
+        image_coordinate=image_coord,
+        extraction_index=2,
+        attributes={"confidence": "high"},
+    )
+    original_doc = data.AnnotatedDocument(
+        document_id="round_trip_2",
+        text="Document with image regions",
+        extractions=[original_extraction],
+    )
+
+    # Serialize to dict
+    doc_dict = data_lib.annotated_document_to_dict(original_doc)
+
+    # Deserialize back to AnnotatedDocument
+    restored_doc = data_lib.dict_to_annotated_document(doc_dict)
+
+    # Verify the round trip preserved all data
+    self.assertEqual(restored_doc.document_id, original_doc.document_id)
+    self.assertEqual(len(restored_doc.extractions), 1)
+
+    restored_extraction = restored_doc.extractions[0]
+    self.assertIsNotNone(restored_extraction.image_coordinate)
+    self.assertEqual(
+        restored_extraction.image_coordinate.x,
+        original_extraction.image_coordinate.x,
+    )
+    self.assertEqual(
+        restored_extraction.image_coordinate.y,
+        original_extraction.image_coordinate.y,
+    )
+    self.assertEqual(
+        restored_extraction.image_coordinate.width,
+        original_extraction.image_coordinate.width,
+    )
+    self.assertEqual(
+        restored_extraction.image_coordinate.height,
+        original_extraction.image_coordinate.height,
+    )
+    self.assertEqual(
+        restored_extraction.image_coordinate.page,
+        original_extraction.image_coordinate.page,
+    )
+    self.assertEqual(restored_extraction.attributes, original_extraction.attributes)
+
+  def test_round_trip_with_both_byte_and_image(self):
+    """Test round-trip with both byte_interval and image_coordinate."""
+    byte_interval = data.ByteInterval(start_pos=0, end_pos=10)
+    image_coord = data.ImageCoordinate(
+        x=10.0, y=20.0, width=100.0, height=50.0, page=1
+    )
+    original_extraction = data.Extraction(
+        extraction_class="complex_field",
+        extraction_text="Complex",
+        byte_interval=byte_interval,
+        image_coordinate=image_coord,
+        char_interval=data.CharInterval(start_pos=0, end_pos=7),
+    )
+    original_doc = data.AnnotatedDocument(
+        document_id="round_trip_3",
+        text="Complex data",
+        extractions=[original_extraction],
+    )
+
+    # Round trip
+    doc_dict = data_lib.annotated_document_to_dict(original_doc)
+    restored_doc = data_lib.dict_to_annotated_document(doc_dict)
+
+    # Verify all three interval types are preserved
+    restored_extraction = restored_doc.extractions[0]
+    self.assertIsNotNone(restored_extraction.char_interval)
+    self.assertIsNotNone(restored_extraction.byte_interval)
+    self.assertIsNotNone(restored_extraction.image_coordinate)
+    self.assertEqual(
+        restored_extraction.byte_interval.start_pos,
+        original_extraction.byte_interval.start_pos,
+    )
+    self.assertEqual(
+        restored_extraction.image_coordinate.x,
+        original_extraction.image_coordinate.x,
     )
 
 
