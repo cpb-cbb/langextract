@@ -41,6 +41,42 @@ class CharInterval:
   end_pos: int | None = None
 
 
+@dataclasses.dataclass
+class ByteInterval:
+  """Class for representing a byte interval.
+
+  Useful for extracting binary data or tracking byte positions in files.
+
+  Attributes:
+    start_pos: The starting byte position (inclusive).
+    end_pos: The ending byte position (exclusive).
+  """
+
+  start_pos: int | None = None
+  end_pos: int | None = None
+
+
+@dataclasses.dataclass
+class ImageCoordinate:
+  """Class for representing image coordinates (bounding boxes).
+
+  Useful for extracting regions from images or documents.
+
+  Attributes:
+    x: The x-coordinate of the top-left corner.
+    y: The y-coordinate of the top-left corner.
+    width: The width of the bounding box.
+    height: The height of the bounding box.
+    page: Optional page number for multi-page documents.
+  """
+
+  x: float | None = None
+  y: float | None = None
+  width: float | None = None
+  height: float | None = None
+  page: int | None = None
+
+
 @dataclasses.dataclass(init=False)
 class Extraction:
   """Represents an extraction extracted from text.
@@ -54,6 +90,9 @@ class Extraction:
     extraction_text: The text of the extraction.
     char_interval: The character interval of the extraction in the original
       text.
+    byte_interval: The byte interval of the extraction for binary data.
+    image_coordinate: The image coordinate (bounding box) for image-based
+      extractions.
     alignment_status: The alignment status of the extraction.
     extraction_index: The index of the extraction in the list of extractions.
     group_index: The index of the group the extraction belongs to.
@@ -65,6 +104,8 @@ class Extraction:
   extraction_class: str
   extraction_text: str
   char_interval: CharInterval | None = None
+  byte_interval: ByteInterval | None = None
+  image_coordinate: ImageCoordinate | None = None
   alignment_status: AlignmentStatus | None = None
   extraction_index: int | None = None
   group_index: int | None = None
@@ -81,6 +122,8 @@ class Extraction:
       *,
       token_interval: tokenizer.TokenInterval | None = None,
       char_interval: CharInterval | None = None,
+      byte_interval: ByteInterval | None = None,
+      image_coordinate: ImageCoordinate | None = None,
       alignment_status: AlignmentStatus | None = None,
       extraction_index: int | None = None,
       group_index: int | None = None,
@@ -90,6 +133,8 @@ class Extraction:
     self.extraction_class = extraction_class
     self.extraction_text = extraction_text
     self.char_interval = char_interval
+    self.byte_interval = byte_interval
+    self.image_coordinate = image_coordinate
     self._token_interval = token_interval
     self.alignment_status = alignment_status
     self.extraction_index = extraction_index

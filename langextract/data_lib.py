@@ -108,6 +108,18 @@ def dict_to_annotated_document(
     else:
       extractions["char_interval"] = None
 
+    byte_int = extractions.get("byte_interval")
+    if byte_int:
+      extractions["byte_interval"] = data.ByteInterval(**byte_int)
+    else:
+      extractions["byte_interval"] = None
+
+    image_coord = extractions.get("image_coordinate")
+    if image_coord:
+      extractions["image_coordinate"] = data.ImageCoordinate(**image_coord)
+    else:
+      extractions["image_coordinate"] = None
+
     status_str = extractions.get("alignment_status")
     if status_str:
       extractions["alignment_status"] = data.AlignmentStatus(status_str)
